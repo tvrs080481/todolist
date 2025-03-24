@@ -1,66 +1,60 @@
+# Este código define funções para gerenciar tarefas no banco de dados.
 from model.tarefa_model import Tarefa
 from sqlalchemy.exc import SQLAlchemyError
 from connection import Session
 
-
+# Cadastrar uma nova tarefa
 def cadastrar_tarefa(descricao: str, situacao: bool):
     try:
-        # Criar uma nova instância do modelo Tarefa com os dados fornecidos
-        nova_tarefa = Tarefa(descricao=descricao, situacao=situacao)
+        nova_tarefa = Tarefa(descricao=descricao, situacao=situacao)  # Cria uma tarefa
         session = Session()
-        # Adicionar a tarefa na sessão
-        session.add(nova_tarefa)
-        
-        # Commit para salvar a tarefa no banco de dados
-        session.commit()
-        
-        #Refresh a sessão
-        session.refresh(nova_tarefa)
-
-        # Retorna o objeto Tarefa inserido
-        return nova_tarefa
-
+        session.add(nova_tarefa)  # Adiciona à sessão
+        session.commit()  # Salva no banco
+        session.refresh(nova_tarefa)  # Atualiza o objeto
+        return nova_tarefa  # Retorna a nova tarefa
     except SQLAlchemyError as e:
-        # Caso ocorra um erro, faz o rollback
-        session.rollback()
+        session.rollback()  # Reverte mudançasit c em caso de erro
         print(f"Erro ao cadastrar tarefa: {e}")
         return None
     finally:
-        # Fechar a sessão após a operação
-        session.close()
+        session.close()  # Fecha a sessão
 
+# Remover uma tarefa pelo ID
 def remover_tarefa(id: int):
     session = Session()
     try:
-        tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()
+        tarefa = session.query(Tarefa).filter(Tarefa.id == id).first()  # Busca a tarefa
         if tarefa:
-            session.delete(tarefa)
-            session.commit()
+            session.delete(tarefa)  # Remove do banco
+            session.commit()  # Confirma a exclusão
             return True
         else:
             print(f"Tarefa com ID {id} não encontrada.")
             return False
     except Exception as e:
-        session.rollback()
+        session.rollback()  # Reverte mudanças em caso de erro
         print(f"Erro deletando tarefa: {e}")
         return False
-    
+    finally:
+        session.close()  # Fecha a sessão
 
-# Atualizar
+# Atualizar uma tarefa pelo ID
 def atualizar_tarefa(tarefa_id: int, descricao: str, situacao: int):
     session = Session()
     try:
-        tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()
+        tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()  # Busca a tarefa
         if tarefa:
-            tarefa.descricao = descricao
-            tarefa.situacao = situacao
-            session.commit()
-            session.refresh(tarefa)
-            return tarefa
+            tarefa.descricao = descricao  # Atualiza a descrição
+            tarefa.situacao = situacao  # Atualiza a situação
+            session.commit()  # Salva alterações
+            session.refresh(tarefa)  # Atualiza o objeto
+            return tarefa  # Retorna a tarefa atualizada
         else:
             print(f"Tarefa com ID {tarefa_id} não encontrada.")
             return None
     except Exception as e:
-        session.rollback()
+        session.rollback()  # Reverte mudanças em caso de erro
         print(f"Erro atualizando tarefa: {e}")
         return None
+    finally:
+        session.close()  # Fecha a sessão
