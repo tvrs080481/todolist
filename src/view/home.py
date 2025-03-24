@@ -8,25 +8,8 @@ def main(page: ft.Page):
     page.window.width = 800  # Largura
     page.window.height = 400  # Altura
     page.theme_mode = ft.ThemeMode.DARK
-
-    def handle_close(e):
-        page.close(dlg_modal)
-        page.add(ft.Text(f"Modal dialog closed with action: {e.control.text}"))
-
-    dlg_modal = ft.AlertDialog(
-        modal=True,
-        title=ft.Text("Please confirm"),
-        content=ft.Text("Do you really want to delete all those files?"),
-        actions=[
-            ft.TextButton("Yes", on_click=handle_close),#ft.TextButton("Yes", on_click=view.tarefa_view.on_delete_click(tarefas_column)), #'''tarefa_id''',
-            ft.TextButton("No", on_click=handle_close),
-        ],
-        actions_alignment=ft.MainAxisAlignment.END,
-        on_dismiss=lambda e: page.add(
-            ft.Text("Modal dialog dismissed"),
-        ),
-    )
-
+    page.scroll = True
+    page.auto_scroll = True
 
     # Campo de entrada para a descrição da tarefa
     descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=300)
@@ -48,6 +31,3 @@ def main(page: ft.Page):
 
     # Inicializa a lista de tarefas
     view.tarefa_view.atualizar_lista_tarefas(tarefas_column)
-
-# Inicia o aplicativo Flet
-ft.app(target=main)
