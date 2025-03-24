@@ -11,7 +11,7 @@ load_dotenv()  # Carrega variáveis de ambiente, como usuário e senha do banco
 # Classe de configuração para armazenar detalhes do banco de dados
 class Config:
     DB_USER = os.getenv('DB_USER')  # O Usuário do banco
-    DB_HOST = os.getenv('DB_HOST')  # Host do banco
+    DB_HOST = os.getenv('DB_HOST')  # O Host do banco
     DB_NAME = os.getenv('DB_NAME')  # Nome do banco
     DB_PASS = os.getenv('DB_PASSWORD')  # Senha do banco
     # Monta a URL de conexão com base nas variáveis de ambiente
