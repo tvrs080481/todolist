@@ -6,13 +6,15 @@ from model.tarefa_model import create_tables
 
 load_dotenv()
 
+#Configuracao
 class Config:
     DB_USER = os.getenv('DB_USER') 
     DB_HOST = os.getenv('DB_HOST')
     DB_NAME = os.getenv('DB_NAME')
-    DB_PORT = os.getenv('DB_PORT', 3306)
-    DATABASE_URL = f'mysql+pymysql://{DB_USER}:@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    DB_PASS = os.getenv('DB_PASSWORD')
+    DATABASE_URL = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}'
 
+#Criar engine
 engine = create_engine(Config.DATABASE_URL)
 
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
