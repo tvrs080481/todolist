@@ -13,7 +13,7 @@ def cadastrar_tarefa(descricao: str, situacao: bool):
         session.refresh(nova_tarefa)  # Atualiza o objeto
         return nova_tarefa  # Retorna a nova tarefa
     except SQLAlchemyError as e:
-        session.rollback()  # Reverte mudanças em caso de erro
+        session.rollback()  # Reverte mudançasit c em caso de erro
         print(f"Erro ao cadastrar tarefa: {e}")
         return None
     finally:
