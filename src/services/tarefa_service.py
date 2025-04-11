@@ -1,4 +1,6 @@
-# Este código define funções para gerenciar tarefas no banco de dados.
+'''
+Definir funções para gerenciar tarefas no banco de dados. - Otávio
+'''
 from model.tarefa_model import Tarefa
 from sqlalchemy.exc import SQLAlchemyError
 from connection import Session
