@@ -3,80 +3,81 @@ import view.listagem
 import datetime
 
 def main(page: ft.Page):
-    # Set page properties
+    # --- Page setup ---
     page.title = "Cadastro de Tarefa"
-    page.add(ft.SafeArea(ft.Text("To-Do List", size=30, weight="bold")))
-    page.add(ft.SafeArea(ft.Text("Gerenciador de Tarefas", size=20, weight="bold", color="White")))  # Title
-    page.add(ft.SafeArea(ft.Text("Feito por: Thalita e Otávio", size=10, italic=True, color="White")))  # Subtitle
-    divider = ft.SafeArea(ft.Divider(color="White", thickness=1))  # Divider for better UI
-    page.add(divider)
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER  # Ensure this is an enum
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER  # Ensure this is an enum
-    page.window.width = 450
-
-    page.window.height = 800
-    page.bgcolor = "Black"
-    page.scroll = True
-    page.auto_scroll = True
-    page.window.full_screen = False
+    page.padding = 0                            # remove default padding
+    page.bgcolor = ft.Colors.with_opacity(0.9, ft.colors.BLACK)  # make page transparent so decoration shows
     page.theme_mode = ft.ThemeMode.DARK
-    page.window.resizable = False
-    page.window.always_on_top = True
 
-    def snackbar(message):
-        ft.SnackBarTheme.bgcolor = ft.Colors.BLACK
-        sn = ft.SnackBar(content=ft.Text(message))
+        # --- Snackbar helper ---
+    def snackbar(message, color):
+        sn = ft.SnackBar(content=ft.Text(message, color=color, weight="bold"))
         page.open(sn)
 
+    # --- Background image via decoration ---
+    page.decoration = ft.BoxDecoration(
+        image=ft.DecorationImage(
+            src="../assets/menu.png",           # your asset path
+            fit=ft.ImageFit.COVER,              # cover the entire page
+        ),
+    )
+
+    # --- Navigation bar ---
     page.navigation_bar = ft.NavigationBar(
         destinations=[
             ft.NavigationBarDestination(icon=ft.Icons.HOME_OUTLINED, label="Home", selected_icon=ft.Icons.HOME),
             ft.NavigationBarDestination(icon=ft.Icons.LIST_OUTLINED, label="Listagem", selected_icon=ft.Icons.LIST),
         ],
-        on_change=lambda e: on_nav_change(e),
         selected_index=0,
+        on_change=lambda e: on_nav_change(page, e),
     )
 
-    def on_nav_change(e):
+    # --- Navigation handler ---
+    def on_nav_change(page, e):
+        page.clean()
         if page.navigation_bar.selected_index == 0:
-            page.clean()
             main(page)
             page.go("/")
-        elif page.navigation_bar.selected_index == 1:
-            page.clean()
+        else:
             view.listagem.listagem_view(page)
             page.go("/listagem")
 
-    # Center the window
+    # --- Window properties ---
     page.window.center()
-
-    # Set the window icon
+    page.window.width = 450
+    page.window.height = 800
+    page.window.full_screen = False
+    page.window.resizable = False
+    page.window.always_on_top = True
     page.window.icon = "../assets/icon.ico"
+    page.on_error = lambda e: print("Page error:", e.data)
 
-    # Declare elements
+    #Localização
+    page.locale_configuration = ft.LocaleConfiguration(
+        supported_locales=[
+            ft.Locale("pt", "pt-BR"),
+        ],
+        current_locale=ft.Locale("pt", "pt-BR"),
+    )
+
+    # --- Input controls ---
     descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=280)
-    situacao_input = ft.Checkbox(label="Tarefa concluída", value=False)
-    result_text = ft.Text()
 
-    # Variable to store the selected date
-    selecionada_data = {"value": None}
-
+    selecionada_data = {"value": datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}
     def handle_change(e):
-        # Update the selected date
         selecionada_data["value"] = e.control.value.strftime('%Y-%m-%d %H:%M')
-        # Update the result_text element
-        snackbar(f"Data selecionada: {selecionada_data['value']}")
-        result_text.update()
+        datebutton.text = f"Data: {selecionada_data['value']}"
+        datebutton.update()
 
     cupertino_date_picker = ft.CupertinoDatePicker(
         first_date=datetime.datetime.now(),
+        last_date=datetime.datetime(2030,10,1,23,59),
         date_picker_mode=ft.CupertinoDatePickerMode.DATE_AND_TIME,
-        last_date=datetime.datetime(year=2030, month=10, day=1, hour=23, minute=59),
+        date_order=ft.CupertinoDatePickerDateOrder.DAY_MONTH_YEAR,
         on_change=handle_change,
     )
-
     datebutton = ft.ElevatedButton(
-        "Data",
+        f"Data: {selecionada_data['value']}",
         icon=ft.Icons.CALENDAR_MONTH,
         on_click=lambda e: page.open(
             ft.CupertinoBottomSheet(
@@ -86,36 +87,111 @@ def main(page: ft.Page):
             )
         ),
     )
+    def on_add_click(e):
+        descricao = descricao_input.value.strip()
+
+        # Check if empty
+        if not descricao:
+            snackbar("A descrição não pode estar vazia.", ft.colors.RED_400)
+            return
+
+        # Check for length
+        if len(descricao) > 25:
+            snackbar("A descrição é muito longa. Limite de 25 caracteres.", ft.colors.RED_400)
+            return
+
+        # If all checks pass, save task
+        view.listagem.add_tarefa(
+            selecionada_data["value"],
+            descricao,
+        )
+
+        snackbar("Tarefa cadastrada com sucesso!", ft.colors.GREEN_400)
 
     add_button = ft.ElevatedButton(
         "Cadastrar Tarefa",
-        on_click=lambda e: view.listagem.add_tarefa(
-            #selecionada_data["value"],
-            descricao_input.value,
-            situacao_input,
+        on_click=on_add_click,
+    )
+
+    settings_button = ft.IconButton(
+        icon=ft.icons.SETTINGS_OUTLINED,
+        tooltip="Configurações",
+        on_click=lambda e: page.open(config_dialog),
+    )
+
+    def alterar_tema(e):
+        if page.theme_mode == ft.ThemeMode.DARK:
+            page.theme_mode = ft.ThemeMode.LIGHT
+            e.control.icon = ft.icons.SIGNAL_WIFI_0_BAR_OUTLINED
+            e.control.tooltip = 'Alterar Tema para escuro'
+            page.bgcolor = ft.Colors.WHITE
+        else:
+            page.theme_mode = ft.ThemeMode.DARK
+            e.control.icon = ft.icons.SIGNAL_WIFI_4_BAR_OUTLINED
+            e.control.tooltip = 'Alterar Tema para claro'
+            page.bgcolor = ft.Colors.BLACK
+        page.update()
+
+    config_dialog = ft.AlertDialog(
+        title=ft.Text("Configurações"),
+        adaptive=True,
+        modal=True,
+        content=ft.Column(
+            [
+                ft.Text("Configurações do aplicativo"),
+                ft.Row(
+                    [
+                        ft.IconButton(icon=ft.icons.SIGNAL_WIFI_4_BAR_OUTLINED, tooltip='Alterar Tema', on_click=lambda e: alterar_tema(e)),
+                        ft.ElevatedButton(
+                            "Cancelar",
+                            icon=ft.Icons.CANCEL,
+                            on_click=lambda e: page.close(config_dialog),
+                        ),
+                    ]
+                ),
+            ]
         ),
     )
 
-    # Layout container
-    container_content = ft.Column(
-        controls=[
-            descricao_input,
-            datebutton,
-            situacao_input,
-            add_button,
-            result_text,
-        ],
-        spacing=10
-    )
-
-    container = ft.Container(
-        content=container_content,
+    page.add(
+    ft.Container(
         expand=True,
-        adaptive=True,
-        width=400,
         padding=20,
-        border_radius=10,
-        margin=ft.margin.only(top=10),
-    )
+        content=ft.Column(
+            controls=[
+                ft.Row(controls=[settings_button, ft.Text("To-Do List", size=30, weight="bold", color="white")],),
+                ft.Column(
+                    controls=[
+                        ft.Text("Gerenciador de Tarefas", size=20, weight="bold", color="white"),
+                        ft.Text("Feito por: Thalita e Otávio", size=10, italic=True, color="white"),
+                        ft.Divider(color="white", thickness=1),
+                    ],
+                    spacing=4,
+                    alignment=ft.MainAxisAlignment.START,
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
 
-    page.add(container)
+                # Form Section
+                ft.Container(
+                    content=ft.Column(
+                        controls=[
+                            descricao_input,
+                            datebutton,
+                            add_button,
+                        ],
+                        spacing=10,
+                        alignment=ft.MainAxisAlignment.CENTER,
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    ),
+                    bgcolor = ft.Colors(ft.colors.TRANSPARENT),  # make page transparent so decoration shows
+                    padding=20,
+                    border_radius=10,
+                    margin=ft.margin.only(top=20),
+                ),
+            ],
+            spacing=30,
+            alignment=ft.MainAxisAlignment.START,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
+    )
+)
