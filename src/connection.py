@@ -18,7 +18,7 @@ class Config:
     DATABASE_URL = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}'
 
 # Cria o "engine", que faz a ponte entre o Python e o banco de dados
-engine = create_engine(Config.DATABASE_URL)
+engine = create_engine(Config.DATABASE_URL, pool_pre_ping=True)
 
 # Configura o gerenciador de sessões
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
