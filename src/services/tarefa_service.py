@@ -46,7 +46,7 @@ def atualizar_tarefa(tarefa_id: int, descricao: str, data: datetime):
     session = Session()
     try:
         tarefa = session.query(Tarefa).filter(Tarefa.id == tarefa_id).first()  # Busca a tarefa
-        if tarefa:
+        if tarefa: 
             tarefa.descricao = descricao  # Atualiza a descrição
             tarefa.data = data  # Atualiza a situação
             session.commit()  # Salva alterações
@@ -58,6 +58,17 @@ def atualizar_tarefa(tarefa_id: int, descricao: str, data: datetime):
     except Exception as e:
         session.rollback()  # Reverte mudanças em caso de erro
         print(f"Erro atualizando tarefa: {e}")
+        return None
+    finally:
+        session.close()  # Fecha a sessão
+
+def query_tarefa():
+    session = Session()
+    try:
+        tarefas = session.query(Tarefa).all()  # Busca todas as tarefas
+        return tarefas  # Retorna a lista de tarefas
+    except Exception as e:
+        print(f"Erro ao consultar tarefas: {e}")
         return None
     finally:
         session.close()  # Fecha a sessão
