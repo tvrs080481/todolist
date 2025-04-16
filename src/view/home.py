@@ -8,11 +8,6 @@ def main(page: ft.Page):
     page.padding = 0                            # remove default padding
     page.bgcolor = ft.Colors.with_opacity(0.9, ft.colors.BLACK)  # make page transparent so decoration shows
     page.theme_mode = ft.ThemeMode.DARK
-    page.fonts = {
-        "Roboto": "fonts/Roboto/static/Roboto-VariableFont_wdth_wght.ttf",
-    }
-
-    page.theme = ft.Theme(font_family="Roboto")  # Default app font
 
         # --- Snackbar helper ---
     def snackbar(message, color):
@@ -34,7 +29,6 @@ def main(page: ft.Page):
             ft.NavigationBarDestination(icon=ft.Icons.LIST_OUTLINED, label="Listagem", selected_icon=ft.Icons.LIST),
         ],
         selected_index=0,
-        bgcolor=ft.colors.with_opacity(0.6, ft.colors.BLACK),
         on_change=lambda e: on_nav_change(page, e),
     )
 
@@ -67,7 +61,7 @@ def main(page: ft.Page):
     )
 
     # --- Input controls ---
-    descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=280, border_color=ft.colors.WHITE, label_style=ft.TextStyle(color=ft.colors.WHITE), multiline=False)
+    descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=280)
 
     selecionada_data = {"value": datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}
     def handle_change(e):
@@ -85,7 +79,6 @@ def main(page: ft.Page):
     datebutton = ft.ElevatedButton(
         f"Data: {selecionada_data['value']}",
         icon=ft.Icons.CALENDAR_MONTH,
-        style=ft.ButtonStyle(text_style=ft.TextStyle(weight="bold")),
         on_click=lambda e: page.open(
             ft.CupertinoBottomSheet(
                 cupertino_date_picker,
@@ -129,38 +122,34 @@ def main(page: ft.Page):
     def alterar_tema(e):
         if page.theme_mode == ft.ThemeMode.DARK:
             page.theme_mode = ft.ThemeMode.LIGHT
-            e.control.icon = ft.icons.DARK_MODE_OUTLINED
+            e.control.icon = ft.icons.SIGNAL_WIFI_0_BAR_OUTLINED
             e.control.tooltip = 'Alterar Tema para escuro'
             page.bgcolor = ft.Colors.WHITE
         else:
             page.theme_mode = ft.ThemeMode.DARK
-            e.control.icon = ft.icons.LIGHT_MODE_OUTLINED
+            e.control.icon = ft.icons.SIGNAL_WIFI_4_BAR_OUTLINED
             e.control.tooltip = 'Alterar Tema para claro'
             page.bgcolor = ft.Colors.BLACK
         page.update()
 
     config_dialog = ft.AlertDialog(
-        title=ft.Text("Configurações", weight="bold"),
+        title=ft.Text("Configurações"),
         adaptive=True,
-        actions=[
-            ft.TextButton(
-                "Fechar",
-                on_click=lambda e: page.close(config_dialog),
-            ),
-        ],
         modal=True,
         content=ft.Column(
             [
+                ft.Text("Configurações do aplicativo"),
                 ft.Row(
                     [
-                        ft.IconButton(icon=ft.icons.LIGHT_MODE_OUTLINED, tooltip='Alterar Tema', on_click=lambda e: alterar_tema(e)),
+                        ft.IconButton(icon=ft.icons.SIGNAL_WIFI_4_BAR_OUTLINED, tooltip='Alterar Tema', on_click=lambda e: alterar_tema(e)),
+                        ft.ElevatedButton(
+                            "Cancelar",
+                            icon=ft.Icons.CANCEL,
+                            on_click=lambda e: page.close(config_dialog),
+                        ),
                     ]
                 ),
-                ft.Divider(),
-                ft.Text("Versão do aplicativo: 1.0.0", size=14),
-                ft.Text("Última atualização: 2025-16-04", size=14),
-                ft.Text("Desenvolvedores: Thalita e Otávio", size=14),
-            ], tight=True, spacing=10, alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            ]
         ),
     )
 
@@ -194,7 +183,7 @@ def main(page: ft.Page):
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
-                    bgcolor = ft.Colors(ft.colors.TRANSPARENT),
+                    bgcolor = ft.Colors(ft.colors.TRANSPARENT),  # make page transparent so decoration shows
                     padding=20,
                     border_radius=10,
                     margin=ft.margin.only(top=20),
