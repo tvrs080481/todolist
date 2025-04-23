@@ -1,12 +1,14 @@
 '''
-Definir funções para gerenciar tarefas no banco de dados. - Otávio
+/src/services/tarefa_service.py
+Definir funções para gerenciar tarefas no banco de dados.
 '''
+# Importando as bibliotecas necessárias.
 from model.tarefa_model import Tarefa
 from sqlalchemy.exc import SQLAlchemyError
 from connection import Session
 from datetime import datetime
 
-# Cadastrar uma nova tarefa
+# Cadastrar uma nova tarefa no banco de dados.
 def cadastrar_tarefa(data: datetime, descricao: str):
     try:
         nova_tarefa = Tarefa(data=data, descricao=descricao)  # Cria uma tarefa
@@ -62,7 +64,7 @@ def atualizar_tarefa(tarefa_id: int, descricao: str, data: datetime):
     finally:
         session.close()  # Fecha a sessão
 
-def query_tarefa():
+def query_tarefa(): # Uma query é uma consulta ao banco de dados.
     session = Session()
     try:
         tarefas = session.query(Tarefa).all()  # Busca todas as tarefas

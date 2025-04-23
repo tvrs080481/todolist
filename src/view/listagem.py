@@ -1,214 +1,275 @@
+'''
+/src/view/listagem.py
+
+View Listagem para exibir as tarefas cadastradas.
+'''
+
+# Importando as bibliotecas necessárias.
 import flet as ft
 from model.tarefa_model import Tarefa
 from datetime import datetime, timedelta
 from services.tarefa_service import remover_tarefa, atualizar_tarefa, cadastrar_tarefa, query_tarefa
+from enum import Enum
 
-def listagem_view(page: ft.Page):
-    page.title = "Listagem de Tarefas "
-    page.bgcolor = ft.colors.BLACK
-    page.scroll = "auto"
-    page.clean()
-    page.padding = 0
-    page.bgcolor = ft.Colors.with_opacity(0.9, ft.colors.BLACK)
-    page.theme_mode = ft.ThemeMode.DARK
-    page.decoration = ft.BoxDecoration(
+# Criando uma classe Enum para definir as cores usadas na interface.
+# Uma classe Enum é uma maneira de definir um conjunto de constantes nomeadas.
+class Cores(Enum):
+    PRETO = "#000000"
+    BRANCO = "#FFFFFF"
+    VERMELHO_500 = "#F44336"
+    AMARELO_500 = "#FFEB3B"
+    TRANSPARENTE = "transparent"
+
+# Função principal para exibir a tela de listagem de tarefas.
+def exibir_listagem(page: ft.Page):
+    # Configurações iniciais da página.
+    page.clean()  # Limpa a página antes de adicionar novos elementos.
+    page.title = "Listagem de Tarefas"  # Define o título da página.
+    page.bgcolor = Cores.PRETO.value  # Define a cor de fundo da página.
+    page.scroll = "auto"  # Permite rolagem automática.
+    page.padding = 0  # Remove o preenchimento da página.
+    page.theme_mode = ft.ThemeMode.DARK  # Define o tema como escuro.
+    page.decoration = ft.BoxDecoration(  # Adiciona uma imagem de fundo.
         image=ft.DecorationImage(
-            src="../assets/menu.png",
-            fit=ft.ImageFit.COVER,
+            src="../assets/menu.png",  # Diretório da imagem de fundo.
+            fit=ft.ImageFit.COVER,  # Faz a imagem cobrir a página inteira.
         ),
     )
 
-    selected_tasks = {}
+    # Dicionário para armazenar as tarefas selecionadas.
+    tarefas_selecionadas = {}
 
-    def color_priority(tarefa):
+    # Função para determinar a prioridade de uma tarefa com base na data.
+    def cor_prioridade(tarefa):
         if tarefa.data <= datetime.now():
-            return 0  # Red - most urgent
+            return 0  # Vermelho - mais urgente.
         elif tarefa.data <= datetime.now() + timedelta(days=1):
-            return 1  # Yellow - soon
-        return 2  # Transparent - not urgent
+            return 1  # Amarelo - em breve.
+        return 2  # Transparente - não urgente.
 
-    def refresh():
-        listagem_view(page)
-    
-    def snackbar(message):
-        sn = ft.SnackBar(content=ft.Text(message, weight="bold"), behavior="floating")
+    # Função para atualizar a tela.
+    def atualizar_tela():
+        exibir_listagem(page)
+
+    # Função para exibir uma mensagem na tela.
+    def exibir_mensagem(mensagem):
+        sn = ft.SnackBar(content=ft.Text(mensagem, weight="bold"), behavior="floating")
         page.open(sn)
-    
-    def check_tarefa_expiration(tarefa):
+
+    # Função para verificar a cor de fundo com base na data de expiração.
+    def verificar_cor_expiracao(tarefa):
         if tarefa.data <= datetime.now():
-            return ft.colors.RED_500
+            return Cores.VERMELHO_500.value
         elif tarefa.data <= datetime.now() + timedelta(days=1):
-            return ft.colors.YELLOW_500
-        return ft.colors.TRANSPARENT
-    
-    def change_text_color_based_on_expiration(tarefa):
+            return Cores.AMARELO_500.value
+        return Cores.TRANSPARENTE.value
+
+    # Função para alterar a cor do texto com base na data de expiração.
+    def alterar_cor_texto_expiracao(tarefa):
         if tarefa.data <= datetime.now():
-            return ft.colors.BLACK
+            return Cores.PRETO.value
         elif tarefa.data <= datetime.now() + timedelta(days=1):
-            return ft.colors.BLACK
-        return ft.colors.WHITE
+            return Cores.PRETO.value
+        return Cores.BRANCO.value
 
-    def open_edit_modal(tarefa):
-        descricao_field = ft.TextField(label="Descrição", value=tarefa.descricao, border_color=ft.colors.WHITE)
-        descricao_field.autofocus = True
-        selecionada_data = {"value": datetime.now().strftime('%Y-%m-%d %H:%M')}
-
-        def handle_change(e):
-            selecionada_data["value"] = e.control.value.strftime('%Y-%m-%d %H:%M')
-            datebutton.text = f"Data: {selecionada_data['value']}"
-            datebutton.update()
-
-        cupertino_date_picker = ft.CupertinoDatePicker(
-            first_date=datetime.now(),
-            last_date=datetime(2030, 10, 1, 23, 59),
-            date_picker_mode=ft.CupertinoDatePickerMode.DATE_AND_TIME,
-            on_change=handle_change,
+    # Função para abrir o modal de edição de uma tarefa.
+    def abrir_modal_edicao(tarefa):
+        descricao_campo = ft.TextField(label="Descrição", value=tarefa.descricao, border_color=Cores.BRANCO.value)
+        descricao_campo.autofocus = True
+        data_campo = ft.TextField(
+            label="Data (YYYY-MM-DD HH:MM)",
+            value=tarefa.data.strftime('%Y-%m-%d %H:%M'),
+            border_color=Cores.BRANCO.value,
         )
 
-        datebutton = ft.ElevatedButton(
-            f"Data: {selecionada_data['value']}",
-            icon=ft.Icons.CALENDAR_MONTH,
-        )
+        # Função para validar e salvar as alterações.
+        def validar_e_salvar(e):
+            descricao = descricao_campo.value.strip()
+            data = data_campo.value.strip()
 
-        save_button = ft.TextButton(
+            # Caso a descrição esteja vazia, exibe mensagem de feedback.
+            if len(descricao) > 25:
+                exibir_mensagem("A descrição não pode ter mais de 25 caracteres.")
+                return
+
+            if verificar_descricao_existente(descricao):
+                exibir_mensagem("Já existem três ou mais tarefas com essa descrição.")
+                return
+
+            try:
+                datetime.strptime(data, '%Y-%m-%d %H:%M')
+            except ValueError:
+                exibir_mensagem("A data está em um formato inválido. Use o formato YYYY-MM-DD HH:MM.")
+                return
+
+            atualizar_tarefa(tarefa.id, descricao, data)
+            atualizar_tela()
+            page.close(dialogo)
+
+        botao_salvar = ft.TextButton(
             "Salvar",
-            icon=ft.Icons.SAVE,
-            on_click=lambda e: (
-            atualizar_tarefa(tarefa.id, descricao_field.value),
-            refresh(),
-            page.close(dialog),
-            ),
+            icon="SAVE",
+            on_click=validar_e_salvar,
         )
 
-        dialog = ft.AlertDialog(
-            title=ft.Text("Editar Tarefa", color=ft.colors.WHITE),
+        dialogo = ft.AlertDialog(
+            title=ft.Text("Editar Tarefa", color=Cores.BRANCO.value),
             content=ft.Column(
-            [
-                ft.Divider(thickness=1, color=ft.colors.WHITE),
-                descricao_field,
-                datebutton,
-            ],
-            tight=True,
+                [
+                    ft.Divider(thickness=1, color=Cores.BRANCO.value),
+                    descricao_campo,
+                    data_campo,
+                ],
+                tight=True,
             ),
             adaptive=True,
             modal=True,
             content_padding=ft.padding.symmetric(horizontal=20, vertical=15),
             actions=[
-            save_button,
-            ft.TextButton("Fechar", on_click=lambda e: page.close(dialog)),
+                botao_salvar,
+                ft.TextButton("Fechar", on_click=lambda e: page.close(dialogo)),
             ],
         )
 
-        page.open(dialog)
+        page.open(dialogo)
 
-    def delete_tarefa(tarefa_id):
+    # Função para remover uma tarefa.
+    def remover_tarefa_por_id(tarefa_id):
         remover_tarefa(tarefa_id)
-        refresh()
+        atualizar_tela()
 
-    def update_selection(tarefa_id, is_selected):
-        selected_tasks[tarefa_id] = is_selected
+    # Função para atualizar a seleção de tarefas.
+    def atualizar_selecao(tarefa_id, selecionada):
+        tarefas_selecionadas[tarefa_id] = selecionada
 
-    def delete_selected_tasks(e):
-        for tarefa_id, is_selected in selected_tasks.items():
-            if is_selected:
+    # Função para remover as tarefas selecionadas.
+    def remover_tarefas_selecionadas(e):
+        for tarefa_id, selecionada in tarefas_selecionadas.items():
+            if selecionada:
                 remover_tarefa(tarefa_id)
-        refresh()
+        atualizar_tela()
 
-    expansion_panel_list = ft.ExpansionPanelList(
+    # Lista de painéis expansíveis para exibir as tarefas.
+    lista_paineis_expansiveis = ft.ExpansionPanelList(
         elevation=4,
     )
 
-    tarefas = sorted(query_tarefa(), key=lambda t: (color_priority(t), t.data))
+    # Obtém as tarefas ordenadas por prioridade e data.
+    tarefas = sorted(query_tarefa(), key=lambda t: (cor_prioridade(t), t.data))
 
+    # Itera sobre as tarefas para criar os painéis.
     for tarefa in tarefas:
-        selected_tasks[tarefa.id] = False
+        tarefas_selecionadas[tarefa.id] = False
 
         checkbox = ft.Checkbox(
-            value=selected_tasks[tarefa.id],
-            fill_color=ft.colors.WHITE,
-            on_change=lambda e, tid=tarefa.id: update_selection(tid, e.control.value),
-            border_side=ft.BorderSide(width=2, color= ft.colors.BLACK),
+            value=tarefas_selecionadas[tarefa.id],
+            fill_color=Cores.BRANCO.value,
+            on_change=lambda e, tid=tarefa.id: atualizar_selecao(tid, e.control.value),
+            border_side=ft.BorderSide(width=2, color=Cores.PRETO.value),
         )
 
-        expansion_panel_list.divider_color = change_text_color_based_on_expiration(tarefa)
-        expansion_panel_list.expanded_icon_color = change_text_color_based_on_expiration(tarefa)
+        lista_paineis_expansiveis.divider_color = alterar_cor_texto_expiracao(tarefa)
+        lista_paineis_expansiveis.expanded_icon_color = alterar_cor_texto_expiracao(tarefa)
 
-
-        panel = ft.ExpansionPanel(
-            bgcolor=check_tarefa_expiration(tarefa),
+        painel = ft.ExpansionPanel(
+            bgcolor=verificar_cor_expiracao(tarefa),
             header=ft.CupertinoContextMenu(
-            enable_haptic_feedback=True,
-            content=ft.ListTile(
-                leading=checkbox,
-                title=ft.Text(tarefa.descricao, weight="bold", style=ft.TextStyle(color=change_text_color_based_on_expiration(tarefa))),
-                bgcolor=check_tarefa_expiration(tarefa),
-            ),
-            actions=[
-                ft.CupertinoContextMenuAction(
-                text="Editar",
-                trailing_icon=ft.Icons.EDIT,
-                on_click=lambda e, t=tarefa: open_edit_modal(t),
+                enable_haptic_feedback=True,
+                content=ft.ListTile(
+                    leading=checkbox,
+                    title=ft.Text(tarefa.descricao, weight="bold", style=ft.TextStyle(color=alterar_cor_texto_expiracao(tarefa))),
+                    bgcolor=verificar_cor_expiracao(tarefa),
                 ),
-                ft.CupertinoContextMenuAction(
-                text="Completar",
-                is_destructive_action=True,
-                trailing_icon=ft.Icons.CHECK,
-                on_click=lambda e, tid=tarefa.id: delete_tarefa(tid),
-                ),
-            ],
+                actions=[
+                    ft.CupertinoContextMenuAction(
+                        text="Editar",
+                        trailing_icon="EDIT",
+                        on_click=lambda e, t=tarefa: abrir_modal_edicao(t),
+                    ),
+                    ft.CupertinoContextMenuAction(
+                        text="Completar",
+                        is_destructive_action=True,
+                        trailing_icon="CHECK",
+                        on_click=lambda e, tid=tarefa.id: remover_tarefa_por_id(tid),
+                    ),
+                ],
             ),
             content=ft.Column(
-            controls=[
-                ft.Row(
                 controls=[
-                    ft.IconButton(
-                        icon=ft.cupertino_icons.ALARM,
-                        icon_color=change_text_color_based_on_expiration(tarefa),
-                        disabled=True,
+                    ft.Row(
+                        controls=[
+                            ft.IconButton(
+                                icon="ALARM",
+                                icon_color=alterar_cor_texto_expiracao(tarefa),
+                                disabled=True,
+                            ),
+                            ft.Text(f"Data: {tarefa.data.strftime('%Y-%m-%d %H:%M')}", weight="bold", height=20, color=alterar_cor_texto_expiracao(tarefa)),
+                        ]
                     ),
-                    ft.Text(f"Data: {tarefa.data.strftime('%Y-%m-%d %H:%M')}", weight="bold", height=20, color=change_text_color_based_on_expiration(tarefa)),
                 ]
-                ),
-            ]
             ),
         )
 
-        expansion_panel_list.controls.append(panel)
+        lista_paineis_expansiveis.controls.append(painel)
 
-    delete_selected_button = ft.ElevatedButton(
+    botao_remover_selecionadas = ft.ElevatedButton(
         text="Completar Selecionadas",
-        icon=ft.icons.CHECK,
+        icon="CHECK",
         style=ft.ButtonStyle(text_style=ft.TextStyle(weight="bold")),
-        bgcolor=ft.colors.TRANSPARENT,
-        visible = True if len(selected_tasks) > 0 else False,
+        bgcolor=Cores.TRANSPARENTE.value,
+        visible=True if len(tarefas_selecionadas) > 0 else False,
         on_click=lambda e: (
-            delete_selected_tasks(e),
-            refresh(),
+            remover_tarefas_selecionadas(e),
+            atualizar_tela(),
         ),
     )
 
+    # Adiciona os elementos à página.
     page.add(
         ft.Container(
             padding=ft.padding.all(10),
             content=ft.Column(
                 controls=[
-                    delete_selected_button,
-                    expansion_panel_list
+                    botao_remover_selecionadas,
+                    lista_paineis_expansiveis
                 ]
             )
         )
     )
-    def checar_tarefas_e_notificar():
+
+    # Função para verificar tarefas atrasadas ou próximas do vencimento e notificar o usuário.
+    def verificar_tarefas_e_notificar():
         tarefas = query_tarefa()
-        tarefas_atrasadas = [tarefa.descricao for tarefa in tarefas if tarefa.data <= datetime.now()]
-        tarefas_proximas = [tarefa.descricao for tarefa in tarefas if datetime.now() < tarefa.data <= datetime.now() + timedelta(days=1)]
+        agora = datetime.now()
+
+        tarefas_atrasadas = [tarefa for tarefa in tarefas if tarefa.data <= agora]
+        tarefas_proximas = [tarefa for tarefa in tarefas if agora < tarefa.data <= agora + timedelta(days=1)]
+
+        mensagens = []
 
         if tarefas_atrasadas:
-            snackbar(f"Você tem tarefas atrasadas: {', '.join(tarefas_atrasadas)}")
-        if tarefas_proximas:
-            snackbar(f"Cuidado! Tarefas próximas do vencimento: {', '.join(tarefas_proximas)}")
-        
-    checar_tarefas_e_notificar()
+            descricoes_atrasadas = ', '.join(tarefa.descricao for tarefa in tarefas_atrasadas)
+            mensagens.append(f"Tarefas atrasadas: {descricoes_atrasadas}")
 
-def add_tarefa(data, descricao):
+        if tarefas_proximas:
+            descricoes_proximas = ', '.join(tarefa.descricao for tarefa in tarefas_proximas)
+            horas_ate_vencimento = ', '.join(
+                f"{int((tarefa.data - agora).total_seconds() // 3600)}h"
+                for tarefa in tarefas_proximas
+            )
+            mensagens.append(f"Tarefas próximas do vencimento: {descricoes_proximas} (vencem em {horas_ate_vencimento})")
+
+        if mensagens:
+            exibir_mensagem('\n'.join(mensagens))
+
+    verificar_tarefas_e_notificar()
+
+# Função para adicionar uma nova tarefa.
+def adicionar_tarefa(data, descricao):
     cadastrar_tarefa(data, descricao)
+
+# Função para verificar se já existem três ou mais tarefas com a mesma descrição.
+def verificar_descricao_existente(descricao):
+    tarefas = query_tarefa()
+    count = sum(1 for tarefa in tarefas if tarefa.descricao == descricao)
+    return True if count >= 3 else False

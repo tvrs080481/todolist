@@ -39,3 +39,15 @@ package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 flet = {extras = ["all"], version = "0.27.6"}
+
+[tool.briefcase]
+project_name = "tarefa"
+formal_name = "Tarefa"
+bundle = "com.mycompany.tarefa"
+version = "0.1.0"
+description = ""
+license = "MIT"
+sources = ["src"]
+
+[tool.briefcase.app.src]
+# Como o arquivo principal está dentro da pasta src, o módulo principal será src.main
