@@ -1,64 +1,84 @@
+'''
+/src/view/home.py
+
+View Home para funcionamento do aplicativo To-Do List.
+'''
+
+# Importando as bibliotecas necessárias
 import flet as ft
 import view.listagem
 import datetime
+from enum import Enum
 
+# Criando uma classe Enum para definir as cores usadas na interface.
+# Uma classe Enum é uma maneira de definir um conjunto de constantes nomeadas.
+class Cores(Enum):
+    PRETO = "#000000"
+    BRANCO = "#FFFFFF"
+    VERMELHO_500 = "#F44336"
+    AMARELO_500 = "#FFEB3B"
+    VERDE_400 = "#66BB6A"
+    TRANSPARENTE = "TRANSPARENT"
+
+# --- "Setup" da página ---
 def main(page: ft.Page):
-    # --- Page setup ---
-    page.title = "Cadastro de Tarefa"
-    page.padding = 0                            # remove default padding
-    page.bgcolor = ft.Colors.with_opacity(0.9, ft.colors.BLACK)  # make page transparent so decoration shows
-    page.theme_mode = ft.ThemeMode.DARK
+    page.title = "Cadastro de Tarefa"  # Título da página
+    page.padding = 0  # Espaçamento interno do elemento
+    page.bgcolor = Cores.PRETO.value  # Cor do fundo da página
+    page.theme_mode = ft.ThemeMode.DARK  # Tema da página
     page.fonts = {
-        "Roboto": "fonts/Roboto/static/Roboto-VariableFont_wdth_wght.ttf",
+        "Kanit": "https://raw.githubusercontent.com/google/fonts/master/ofl/kanit/Kanit-Bold.ttf",  # Link para a fonte Kanit, que vamos usar.
     }
 
-    page.theme = ft.Theme(font_family="Roboto")  # Default app font
+    page.theme = ft.Theme(font_family="Kanit")  # Definindo a fonte padrão da página.
 
-        # --- Snackbar helper ---
+    # --- Snackbar ---
+    '''
+        Função para exibir mensagens coloridas de feedback ao usuário.
+    '''
     def snackbar(message, color):
         sn = ft.SnackBar(content=ft.Text(message, color=color, weight="bold"))
         page.open(sn)
 
-    # --- Background image via decoration ---
+    # --- Imagem de fundo ---
     page.decoration = ft.BoxDecoration(
         image=ft.DecorationImage(
-            src="../assets/menu.png",           # your asset path
-            fit=ft.ImageFit.COVER,              # cover the entire page
+            src="../assets/menu.png",  # Diretório da imagem.
+            fit=ft.ImageFit.COVER,  # Cobrir a página inteira.
         ),
     )
 
-    # --- Navigation bar ---
+    # --- Barra de navegação ---
     page.navigation_bar = ft.NavigationBar(
         destinations=[
             ft.NavigationBarDestination(icon=ft.Icons.HOME_OUTLINED, label="Home", selected_icon=ft.Icons.HOME),
             ft.NavigationBarDestination(icon=ft.Icons.LIST_OUTLINED, label="Listagem", selected_icon=ft.Icons.LIST),
         ],
         selected_index=0,
-        bgcolor=ft.colors.with_opacity(0.6, ft.colors.BLACK),
-        on_change=lambda e: on_nav_change(page, e),
+        bgcolor=Cores.PRETO.value,  # Cor de fundo da barra de navegação.
+        on_change=lambda e: on_nav_mudanca(page, e),  # Lambda para chamar a função de mudança de página.
     )
 
-    # --- Navigation handler ---
-    def on_nav_change(page, e):
-        page.clean()
+    # --- "Handler" da navegação ---
+    def on_nav_mudanca(page, e):
+        page.clean()  # Limpar página.
         if page.navigation_bar.selected_index == 0:
-            main(page)
-            page.go("/")
+            main(page)  # Rodar a função main novamente, para voltar a página inicial.
+            page.go("/")  # Ir para a página inicial (root).
         else:
-            view.listagem.listagem_view(page)
-            page.go("/listagem")
+            view.listagem.exibir_listagem(page)  # Rodar a função de listagem, para ir para a página de listagem.
+            page.go("/listagem")  # Ir para a página de listagem.
 
-    # --- Window properties ---
-    page.window.center()
-    page.window.width = 450
-    page.window.height = 800
-    page.window.full_screen = False
-    page.window.resizable = False
-    page.window.always_on_top = True
-    page.window.icon = "../assets/icon.ico"
-    page.on_error = lambda e: print("Page error:", e.data)
+    # --- Propriedades da Janela ---
+    page.window.center()  # Centralizar a janela.
+    page.window.width = 450  # Largura da janela.
+    page.window.height = 800  # Altura da janela.
+    page.window.full_screen = False  # Janela não em tela cheia.
+    page.window.resizable = False  # Não redimensionável.
+    page.window.icon = "../assets/icon.ico"  # Resgatar o ícone do aplicativo.
+    page.on_error = lambda e: print("Page error:", e.data)  # Exibir erros no console, caso tenha um.
 
-    #Localização
+    # Localização do aplicativo para português brasileiro.
     page.locale_configuration = ft.LocaleConfiguration(
         supported_locales=[
             ft.Locale("pt", "pt-BR"),
@@ -66,97 +86,111 @@ def main(page: ft.Page):
         current_locale=ft.Locale("pt", "pt-BR"),
     )
 
-    # --- Input controls ---
-    descricao_input = ft.TextField(label="Descrição da Tarefa", autofocus=True, width=280, border_color=ft.colors.WHITE, label_style=ft.TextStyle(color=ft.colors.WHITE), multiline=False)
-
-    selecionada_data = {"value": datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}
-    def handle_change(e):
-        selecionada_data["value"] = e.control.value.strftime('%Y-%m-%d %H:%M')
-        datebutton.text = f"Data: {selecionada_data['value']}"
-        datebutton.update()
-
-    cupertino_date_picker = ft.CupertinoDatePicker(
-        first_date=datetime.datetime.now(),
-        last_date=datetime.datetime(2030,10,1,23,59),
-        date_picker_mode=ft.CupertinoDatePickerMode.DATE_AND_TIME,
-        date_order=ft.CupertinoDatePickerDateOrder.DAY_MONTH_YEAR,
-        on_change=handle_change,
+    # --- Controles do input ---
+    # Campo de texto para o usuário digitar a descrição da tarefa.
+    descricao_input = ft.TextField(
+        label="Descrição da Tarefa",  # Texto que aparece como rótulo do campo.
+        autofocus=True,  # Foco automático no campo ao abrir a página.
+        width=280,  # Largura do campo de texto.
+        label_style=ft.TextStyle(color=Cores.BRANCO.value),  # Estilo do texto do rótulo.
+        multiline=False,  # Não permite múltiplas linhas no campo.
     )
+
+    # Dicionário para armazenar a data selecionada.
+    selecionada_data = {"value": datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}  # Data e hora atuais como valor inicial.
+
+    # Função para lidar com mudanças na data selecionada.
+    def lidar_mudanca(e):
+        selecionada_data["value"] = e.control.value.strftime('%Y-%m-%d %H:%M')  # Atualiza a data selecionada no dicionário.
+        datebutton.text = f"Data: {selecionada_data['value']}"  # Atualiza o texto do botão com a nova data.
+        datebutton.update()  # Atualiza o botão na interface.
+
+    # Componente de seleção de data e hora no estilo Cupertino (iOS).
+    cupertino_date_picker = ft.CupertinoDatePicker(
+        first_date=datetime.datetime.now(),  # Data mínima permitida (hoje).
+        last_date=datetime.datetime(2030, 10, 1, 23, 59),  # Data máxima permitida.
+        date_picker_mode=ft.CupertinoDatePickerMode.DATE_AND_TIME,  # Permite selecionar data e hora.
+        date_order=ft.CupertinoDatePickerDateOrder.DAY_MONTH_YEAR,  # Ordem dos campos de data (dia, mês, ano).
+        on_change=lidar_mudanca,  # Chama a função lidar_mudanca ao alterar a data.
+    )
+
+    # Botão para abrir o seletor de data e hora.
     datebutton = ft.ElevatedButton(
-        f"Data: {selecionada_data['value']}",
-        icon=ft.Icons.CALENDAR_MONTH,
-        style=ft.ButtonStyle(text_style=ft.TextStyle(weight="bold")),
-        on_click=lambda e: page.open(
-            ft.CupertinoBottomSheet(
-                cupertino_date_picker,
-                height=216,
-                padding=ft.padding.only(top=6),
+        f"Data: {selecionada_data['value']}",  # Texto inicial do botão com a data atual.
+        icon=ft.Icons.CALENDAR_MONTH,  # Ícone de calendário no botão.
+        style=ft.ButtonStyle(text_style=ft.TextStyle(weight="bold")),  # Estilo do texto do botão.
+        on_click=lambda e: page.open(  # Ao clicar, abre o seletor de data e hora.
+            ft.CupertinoBottomSheet(  # Exibe o seletor em um "sheet" na parte inferior da tela.
+                cupertino_date_picker,  # Componente de seleção de data e hora.
+                height=216,  # Altura do "sheet".
+                padding=ft.padding.only(top=6),  # Espaçamento no topo do "sheet".
             )
         ),
     )
-    def on_add_click(e):
+    def quando_clicar_adicionar(e):
         descricao = descricao_input.value.strip()
 
-        # Check if empty
+        # Caso a descrição esteja vazia, exibe mensagem de feedback.
         if not descricao:
-            snackbar("A descrição não pode estar vazia.", ft.colors.RED_400)
+            snackbar("A descrição não pode estar vazia.", Cores.VERMELHO_500.value)
             return
 
-        # Check for length
+        # Caso a descrição tenha mais de 25 caracteres, exibe mensagem de feedback.
         if len(descricao) > 25:
-            snackbar("A descrição é muito longa. Limite de 25 caracteres.", ft.colors.RED_400)
+            snackbar("A descrição é muito longa. Limite de 25 caracteres.", Cores.VERMELHO_500.value)
             return
-
-        # If all checks pass, save task
-        view.listagem.add_tarefa(
+        
+        # Caso a data esteja vazia, exibe mensagem de feedback.
+        if not selecionada_data["value"]:
+            snackbar("A data não pode estar vazia.", Cores.VERMELHO_500.value)
+            return
+        
+        # Caso a data seja inválida, exibe mensagem de feedback.
+        if view.listagem.verificar_descricao_existente(descricao):
+            snackbar("Limite de três tarefas com a mesma descrição.", Cores.VERMELHO_500.value)
+            return
+        # Caso tudo esteja correto, adiciona a tarefa e exibe mensagem de feedback.
+        view.listagem.adicionar_tarefa(
             selecionada_data["value"],
             descricao,
         )
 
-        snackbar("Tarefa cadastrada com sucesso!", ft.colors.GREEN_400)
+        snackbar("Tarefa cadastrada com sucesso!", Cores.VERDE_400.value)  # Mensagem de sucesso.
 
+    # Botão para adicionar tarefa.
+    # O botão chama a função on_add_click quando clicado.
     add_button = ft.ElevatedButton(
         "Cadastrar Tarefa",
-        on_click=on_add_click,
+        on_click=quando_clicar_adicionar,
     )
 
+    # Botão de configurações.
+    # O botão abre o dialog de configurações quando clicado.
     settings_button = ft.IconButton(
-        icon=ft.icons.SETTINGS_OUTLINED,
+        icon="SETTINGS_OUTLINED",
         tooltip="Configurações",
         on_click=lambda e: page.open(config_dialog),
     )
 
-    def alterar_tema(e):
-        if page.theme_mode == ft.ThemeMode.DARK:
-            page.theme_mode = ft.ThemeMode.LIGHT
-            e.control.icon = ft.icons.DARK_MODE_OUTLINED
-            e.control.tooltip = 'Alterar Tema para escuro'
-            page.bgcolor = ft.Colors.WHITE
-        else:
-            page.theme_mode = ft.ThemeMode.DARK
-            e.control.icon = ft.icons.LIGHT_MODE_OUTLINED
-            e.control.tooltip = 'Alterar Tema para claro'
-            page.bgcolor = ft.Colors.BLACK
-        page.update()
 
+    # --- Configurações do aplicativo ---
+    # Função para alterar o tema do aplicativo, que pode ser claro (LIGHT) ou escuro (DARK).
+
+    # Configuração do diálogo de configurações.
     config_dialog = ft.AlertDialog(
-        title=ft.Text("Configurações", weight="bold"),
-        adaptive=True,
+        title=ft.Text("Configurações", weight="bold"),  # Título do diálogo.
+        adaptive=True,  # Ajusta o tamanho do diálogo automaticamente.
         actions=[
             ft.TextButton(
-                "Fechar",
+                "Fechar",  # Botão para fechar o diálogo.
                 on_click=lambda e: page.close(config_dialog),
             ),
         ],
-        modal=True,
+        modal=True,  # Define o diálogo como modal (não permite interação com outros elementos enquanto aberto).
         content=ft.Column(
             [
-                ft.Row(
-                    [
-                        ft.IconButton(icon=ft.icons.LIGHT_MODE_OUTLINED, tooltip='Alterar Tema', on_click=lambda e: alterar_tema(e)),
-                    ]
-                ),
-                ft.Divider(),
+                ft.Divider(),  # Linha divisória.
+                # Informações sobre o aplicativo.
                 ft.Text("Versão do aplicativo: 1.0.0", size=14),
                 ft.Text("Última atualização: 2025-16-04", size=14),
                 ft.Text("Desenvolvedores: Thalita e Otávio", size=14),
@@ -164,43 +198,46 @@ def main(page: ft.Page):
         ),
     )
 
+    # Adicionando os elementos à página principal.
     page.add(
     ft.Container(
-        expand=True,
-        padding=20,
+        expand=True,  # Expande o container para ocupar todo o espaço disponível.
+        padding=20,  # Espaçamento interno do container.
         content=ft.Column(
             controls=[
+                # Linha com o botão de configurações e o título do aplicativo.
                 ft.Row(controls=[settings_button, ft.Text("To-Do List", size=30, weight="bold", color="white")],),
                 ft.Column(
                     controls=[
+                        # Subtítulo e informações adicionais.
                         ft.Text("Gerenciador de Tarefas", size=20, weight="bold", color="white"),
                         ft.Text("Feito por: Thalita e Otávio", size=10, italic=True, color="white"),
-                        ft.Divider(color="white", thickness=1),
+                        ft.Divider(color="white", thickness=1),  # Linha divisória.
                     ],
                     spacing=4,
                     alignment=ft.MainAxisAlignment.START,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
 
-                # Form Section
+                # Seção do formulário para cadastro de tarefas.
                 ft.Container(
                     content=ft.Column(
                         controls=[
-                            descricao_input,
-                            datebutton,
-                            add_button,
+                            descricao_input,  # Campo de texto para descrição da tarefa.
+                            datebutton,  # Botão para selecionar a data.
+                            add_button,  # Botão para cadastrar a tarefa.
                         ],
-                        spacing=10,
+                        spacing=10,  # Espaçamento entre os elementos.
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
-                    bgcolor = ft.Colors(ft.colors.TRANSPARENT),
-                    padding=20,
-                    border_radius=10,
-                    margin=ft.margin.only(top=20),
+                    bgcolor = Cores.TRANSPARENTE,  # Fundo transparente.
+                    padding=20,  # Espaçamento interno do container.
+                    border_radius=10,  # Bordas arredondadas.
+                    margin=ft.margin.only(top=20),  # Margem superior.
                 ),
             ],
-            spacing=30,
+            spacing=30,  # Espaçamento entre as seções.
             alignment=ft.MainAxisAlignment.START,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         ),
