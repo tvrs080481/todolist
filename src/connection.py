@@ -4,7 +4,7 @@ Este código configura e gerencia a conexão com o banco de dados MySQL usando S
 '''
 
 from dotenv import load_dotenv  # Carrega variáveis de ambiente do arquivo .env
-from sqlalchemy import create_engine  # Cria a conexão com o banco de dados
+from sqlalchemy import create_engine, text # Cria a conexão com o banco de dados
 from sqlalchemy.orm import sessionmaker  # Gerencia sessões do banco de dados
 import os
 from model.tarefa_model import create_tables  # Função para criar tabelas no banco
@@ -22,7 +22,14 @@ class Config:
     DATABASE_URL = f'mysql+pymysql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
 # Cria o "engine", que faz a ponte entre o Python e o banco de dados
-engine = create_engine(Config.DATABASE_URL, pool_pre_ping=True)
+engine = create_engine(
+    Config.DATABASE_URL,
+    pool_size=5,  # Tamanho do pool de conexões
+    max_overflow=10,  # Quantas conexões podem ser criadas além do pool_size
+    pool_timeout=30,  # Tempo de espera até um erro de timeout
+    pool_recycle=3600,  # Tempo em segundos antes de uma conexão ser reciclada
+    pool_pre_ping=True,  # Verifica se a conexão está ativa
+)
 
 # Configura o gerenciador de sessões
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
