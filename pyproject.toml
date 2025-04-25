@@ -50,4 +50,3 @@ license = "MIT"
 sources = ["src"]
 
 [tool.briefcase.app.src]
-# Como o arquivo principal está dentro da pasta src, o módulo principal será src.main

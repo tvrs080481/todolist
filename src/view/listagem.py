@@ -25,7 +25,7 @@ def exibir_listagem(page: ft.Page):
     # Configurações iniciais da página.
     page.clean()  # Limpa a página antes de adicionar novos elementos.
     page.title = "Listagem de Tarefas"  # Define o título da página.
-    page.bgcolor = Cores.PRETO.value  # Define a cor de fundo da página.
+    page.bgcolor = ft.Colors.with_opacity(0.9, Cores.PRETO.value)
     page.scroll = "auto"  # Permite rolagem automática.
     page.padding = 0  # Remove o preenchimento da página.
     page.theme_mode = ft.ThemeMode.DARK  # Define o tema como escuro.
@@ -39,13 +39,26 @@ def exibir_listagem(page: ft.Page):
     # Dicionário para armazenar as tarefas selecionadas.
     tarefas_selecionadas = {}
 
-    # Função para determinar a prioridade de uma tarefa com base na data.
     def cor_prioridade(tarefa):
-        if tarefa.data <= datetime.now():
-            return 0  # Vermelho - mais urgente.
-        elif tarefa.data <= datetime.now() + timedelta(days=1):
-            return 1  # Amarelo - em breve.
-        return 2  # Transparente - não urgente.
+        try:
+            # Verifica se a tarefa possui uma data e se ela é uma string
+            if isinstance(tarefa.data, str):
+                try:
+                    tarefa_data = datetime.strptime(tarefa.data, '%Y-%m-%d %H:%M')
+                except ValueError:
+                    tarefa_data = datetime.now()
+            else:
+                tarefa_data = tarefa.data
+            
+            # Aqui você pode comparar a tarefa com a data de hoje ou definir uma lógica de cor
+            if tarefa_data <= datetime.now():
+                return Cores.VERMELHO_500.value  # Exemplo de cor para tarefas antigas ou urgentes
+            else:
+                return Cores.PRETO.value
+        except Exception as e:
+            # Caso ocorra algum outro erro, retorna uma cor padrão
+            print(f"Erro ao processar a data da tarefa: {e}")
+            return Cores.TRANSPARENTE.value
 
     # Função para atualizar a tela.
     def atualizar_tela():
@@ -141,13 +154,30 @@ def exibir_listagem(page: ft.Page):
     # Função para atualizar a seleção de tarefas.
     def atualizar_selecao(tarefa_id, selecionada):
         tarefas_selecionadas[tarefa_id] = selecionada
+        # Recalcular a visibilidade do botão
+        botao_remover_selecionadas.visible = any(tarefas_selecionadas.values())
+        page.update()  # Atualiza a interface
 
     # Função para remover as tarefas selecionadas.
     def remover_tarefas_selecionadas(e):
-        for tarefa_id, selecionada in tarefas_selecionadas.items():
-            if selecionada:
-                remover_tarefa(tarefa_id)
+        # Desabilitar o botão para evitar múltiplos cliques
+        botao_remover_selecionadas.disabled = True
+        page.update()  # Atualiza a interface para refletir o estado desabilitado
+
+        # Remover tarefas selecionadas
+        tarefas_a_remover = [tarefa_id for tarefa_id, selecionada in tarefas_selecionadas.items() if selecionada]
+        
+        # Remover as tarefas do banco de dados ou do estado
+        for tarefa_id in tarefas_a_remover:
+            remover_tarefa(tarefa_id)
+            del tarefas_selecionadas[tarefa_id]  # Remover do dicionário
+
+        # Atualizar a tela
         atualizar_tela()
+
+        # Reabilitar o botão após a operação
+        botao_remover_selecionadas.disabled = False
+        page.update()  # Atualiza a interface para refletir o estado habilitado novamente
 
     # Lista de painéis expansíveis para exibir as tarefas.
     lista_paineis_expansiveis = ft.ExpansionPanelList(
@@ -155,7 +185,7 @@ def exibir_listagem(page: ft.Page):
     )
 
     # Obtém as tarefas ordenadas por prioridade e data.
-    tarefas = sorted(query_tarefa(), key=lambda t: (cor_prioridade(t), t.data))
+    tarefas = sorted(query_tarefa(), key=lambda t: (t.data, cor_prioridade(t)))
 
     # Itera sobre as tarefas para criar os painéis.
     for tarefa in tarefas:
@@ -218,10 +248,8 @@ def exibir_listagem(page: ft.Page):
         style=ft.ButtonStyle(text_style=ft.TextStyle(weight="bold")),
         bgcolor=Cores.TRANSPARENTE.value,
         visible=True if len(tarefas_selecionadas) > 0 else False,
-        on_click=lambda e: (
-            remover_tarefas_selecionadas(e),
-            atualizar_tela(),
-        ),
+        on_click=lambda e: remover_tarefas_selecionadas(e),
+        disabled=False  # Botão começa habilitado
     )
 
     # Adiciona os elementos à página.

@@ -24,7 +24,7 @@ class Cores(Enum):
 def main(page: ft.Page):
     page.title = "Cadastro de Tarefa"  # Título da página
     page.padding = 0  # Espaçamento interno do elemento
-    page.bgcolor = Cores.PRETO.value  # Cor do fundo da página
+    page.bgcolor = ft.Colors.with_opacity(0.9, Cores.PRETO.value)
     page.theme_mode = ft.ThemeMode.DARK  # Tema da página
     page.fonts = {
         "Kanit": "https://raw.githubusercontent.com/google/fonts/master/ofl/kanit/Kanit-Bold.ttf",  # Link para a fonte Kanit, que vamos usar.
@@ -67,7 +67,7 @@ def main(page: ft.Page):
             page.go("/")  # Ir para a página inicial (root).
         else:
             view.listagem.exibir_listagem(page)  # Rodar a função de listagem, para ir para a página de listagem.
-            page.go("/listagem")  # Ir para a página de listagem.
+            page.go("/listagem")  # Ir para a página de listagem..
 
     # --- Propriedades da Janela ---
     page.window.center()  # Centralizar a janela.
@@ -128,34 +128,34 @@ def main(page: ft.Page):
         ),
     )
     def quando_clicar_adicionar(e):
-        descricao = descricao_input.value.strip()
+        add_button.disabled = True  # Desativa o botão
+        add_button.update()
 
-        # Caso a descrição esteja vazia, exibe mensagem de feedback.
-        if not descricao:
-            snackbar("A descrição não pode estar vazia.", Cores.VERMELHO_500.value)
-            return
+        try:
+            descricao = descricao_input.value.strip()
 
-        # Caso a descrição tenha mais de 25 caracteres, exibe mensagem de feedback.
-        if len(descricao) > 25:
-            snackbar("A descrição é muito longa. Limite de 25 caracteres.", Cores.VERMELHO_500.value)
-            return
-        
-        # Caso a data esteja vazia, exibe mensagem de feedback.
-        if not selecionada_data["value"]:
-            snackbar("A data não pode estar vazia.", Cores.VERMELHO_500.value)
-            return
-        
-        # Caso a data seja inválida, exibe mensagem de feedback.
-        if view.listagem.verificar_descricao_existente(descricao):
-            snackbar("Limite de três tarefas com a mesma descrição.", Cores.VERMELHO_500.value)
-            return
-        # Caso tudo esteja correto, adiciona a tarefa e exibe mensagem de feedback.
-        view.listagem.adicionar_tarefa(
-            selecionada_data["value"],
-            descricao,
-        )
+            if not descricao:
+                snackbar("A descrição não pode estar vazia.", Cores.VERMELHO_500.value)
+                return
 
-        snackbar("Tarefa cadastrada com sucesso!", Cores.VERDE_400.value)  # Mensagem de sucesso.
+            if len(descricao) > 25:
+                snackbar("A descrição é muito longa. Limite de 25 caracteres.", Cores.VERMELHO_500.value)
+                return
+
+            if not selecionada_data["value"]:
+                snackbar("A data não pode estar vazia.", Cores.VERMELHO_500.value)
+                return
+
+            if view.listagem.verificar_descricao_existente(descricao):
+                snackbar("Limite de três tarefas com a mesma descrição.", Cores.VERMELHO_500.value)
+                return
+
+            view.listagem.adicionar_tarefa(selecionada_data["value"], descricao)
+            snackbar("Tarefa cadastrada com sucesso!", Cores.VERDE_400.value)
+
+        finally:
+            add_button.disabled = False  # Reativa o botão após finalizar a função
+            add_button.update()
 
     # Botão para adicionar tarefa.
     # O botão chama a função on_add_click quando clicado.
@@ -191,8 +191,8 @@ def main(page: ft.Page):
             [
                 ft.Divider(),  # Linha divisória.
                 # Informações sobre o aplicativo.
-                ft.Text("Versão do aplicativo: 1.0.0", size=14),
-                ft.Text("Última atualização: 2025-16-04", size=14),
+                ft.Text("Versão do aplicativo: 1.0.3", size=14),
+                ft.Text("Última atualização: 2025-25-04", size=14),
                 ft.Text("Desenvolvedores: Thalita e Otávio", size=14),
             ], tight=True, spacing=10, alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         ),
